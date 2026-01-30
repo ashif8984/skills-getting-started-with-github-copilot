@@ -46,7 +46,49 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           details.participants.forEach((p) => {
             const li = document.createElement("li");
-            li.textContent = p;
+            li.dataset.email = p;
+
+            const span = document.createElement("span");
+            span.className = "participant-email";
+            span.textContent = p;
+
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "remove-participant";
+            removeBtn.title = `Unregister ${p}`;
+            removeBtn.type = "button";
+            removeBtn.innerHTML = "🗑️";
+
+            removeBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              if (!confirm(`Unregister ${p} from ${name}?`)) return;
+              try {
+                const res = await fetch(`/activities/${encodeURIComponent(name)}/participants?email=${encodeURIComponent(p)}`, {
+                  method: "DELETE",
+                });
+                const json = await res.json();
+                if (res.ok) {
+                  messageDiv.textContent = json.message;
+                  messageDiv.className = "message success";
+                  messageDiv.classList.remove("hidden");
+                  fetchActivities();
+                } else {
+                  messageDiv.textContent = json.detail || "Failed to remove participant";
+                  messageDiv.className = "message error";
+                  messageDiv.classList.remove("hidden");
+                }
+                setTimeout(() => {
+                  messageDiv.classList.add("hidden");
+                }, 5000);
+              } catch (error) {
+                messageDiv.textContent = "Failed to remove participant. Please try again.";
+                messageDiv.className = "message error";
+                messageDiv.classList.remove("hidden");
+                console.error("Error removing participant:", error);
+              }
+            });
+
+            li.appendChild(span);
+            li.appendChild(removeBtn);
             ul.appendChild(li);
           });
         }
